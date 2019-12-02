@@ -5,16 +5,18 @@ __global__ void MulticlassCrossEntropyLossForwardGPU(const int nthreads,
           const Dtype* input_data, const Dtype* label, Dtype* loss) {
   CUDA_KERNEL_LOOP(index, nthreads) {
     Dtype tmp = input_data[index];
-    if (tmp < 1e-10) {
-      tmp = 1e-10;
-    }
-    if (tmp > (1 - 1e-10)) {
-      tmp = 1 - 1e-10;
-    }
     if (int(label[index]) == 0) {
-      loss[index] = -log(1 - tmp);
+      Dtype tmp_inverse = 1 - tmp;
+      if (tmp_inverse < 1e-10) {
+        tmp_inverse = 1e-10;
+      }
+      loss[index] = -log(tmp_inverse);
+      // loss[index] = -log(1 - tmp);
     }
     else {
+      if (tmp < 1e-10) {
+        tmp = 1e-10;
+      }
       loss[index] = -log(tmp);
     }
   }
@@ -40,21 +42,22 @@ void MulticlassCrossEntropyLossLayer<Dtype>::Forward_gpu(
   top[0]->mutable_cpu_data()[0] = loss;
 }
 template <typename Dtype>
-__global__ void MulticlassCrossEntropyLossBackwardGPU(const int nthreads, 
-          const Dtype* input_data, const Dtype* label, Dtype* bottom_diff, 
+__global__ void MulticlassCrossEntropyLossBackwardGPU(const int nthreads,
+          const Dtype* input_data, const Dtype* label, Dtype* bottom_diff,
                   const int channels) {
   CUDA_KERNEL_LOOP(index, nthreads) {
     Dtype tmp = input_data[index];
-    if (tmp < 1e-10) {
-      tmp = 1e-10;
-    }
-    if (tmp > (1 - 1e-10)) {
-      tmp = 1 - 1e-10;
-    }
     if (int(label[index]) == 0) {
-      bottom_diff[index] = 1.0 / (channels * (1 - tmp));
+      Dtype tmp_inverse = 1 - tmp;
+      if (tmp_inverse < 1e-10) {
+        tmp_inverse = 1e-10;
+      }
+      bottom_diff[index] = 1.0 / (channels * (tmp_inverse));
     }
     else {
+      if (tmp < 1e-10) {
+        tmp = 1e-10;
+      }
       bottom_diff[index] = -1.0 / (channels * tmp);
     }
   }
@@ -71,12 +74,12 @@ void MulticlassCrossEntropyLossLayer<Dtype>::Backward_gpu(const vector<Blob<Dtyp
     const Dtype* input_data = bottom[0]->gpu_data();
     const Dtype* label = bottom[1]->gpu_data();
     const int nthreads = batch_size * channels;
-    
+
     MulticlassCrossEntropyLossBackwardGPU<Dtype><<<CAFFE_GET_BLOCKS(nthreads),
         CAFFE_CUDA_NUM_THREADS>>>(nthreads, input_data, label, bottom_diff,
         channels);
     const Dtype loss_weight = top[0]->cpu_diff()[0];
-    
+
     caffe_gpu_scal(bottom[0]->count(), loss_weight / batch_size, bottom_diff);
   }
 }

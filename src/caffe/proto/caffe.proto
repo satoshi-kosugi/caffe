@@ -397,6 +397,7 @@ message LayerParameter {
   optional ReLUParameter relu_param = 123;
   optional ReshapeParameter reshape_param = 133;
   optional ROIPoolingParameter roi_pooling_param = 147;
+  optional OutsideAveragePoolingParameter outside_average_pooling_param = 151;
   optional ScaleParameter scale_param = 142;
   optional SigmoidParameter sigmoid_param = 124;
   optional SmoothL1LossParameter smooth_l1_loss_param = 148;
@@ -932,7 +933,7 @@ message PowerParameter {
 }
 
 message PSROIPoolingParameter {
-   required float spatial_scale = 1; 
+   required float spatial_scale = 1;
    required int32 output_dim = 2; // output channel number
    required int32 group_size = 3; // number of groups to encode position-sensitive score maps
  }
@@ -1090,6 +1091,11 @@ message ROIPoolingParameter {
   optional float spatial_scale = 3 [default = 1];
 }
 
+// Message that stores parameters used by OutsideAveragePoolingLayer
+message OutsideAveragePoolingParameter {
+  optional float spatial_scale = 1 [default = 1];
+}
+
 message ScaleParameter {
   // The first axis of bottom[0] (the first input Blob) along which to apply
   // bottom[1] (the second input Blob).  May be negative to index from the end
@@ -1238,28 +1244,28 @@ message WindowDataParameter {
 message MILDataParameter {
   // Specify the data source.
   optional string source = 1;
-  
+
   // Number of scales for each image
   optional uint32 num_scales = 2 [default = 1];
-  
+
   // Side length ratio between neighbouring scales
   optional float scale_factor = 6 [default = 1];
-  
+
   // Number of channels in the image
   optional uint32 channels = 4 [default = 3];
-  
+
   // Specify the number of images per batch
   optional uint32 images_per_batch = 3;
   // Specify the number of classes
   optional uint32 n_classes = 5;
   // specify the box_dir and label_dir
   optional string label_file = 7;
-  
+
   // Root directory which contains all the images
   optional string root_dir = 11;
   // Extention for the file
   optional string ext = 12;
-  
+
   // To randomize or not
   optional bool randomize = 13 [default = true];
 }
